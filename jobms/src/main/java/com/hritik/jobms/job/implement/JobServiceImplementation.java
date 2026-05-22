@@ -1,14 +1,20 @@
 package com.hritik.jobms.job.implement;
 
+import java.util.ArrayList;
 // import java.util.ArrayList;
 // import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import com.hritik.jobms.job.external.Company;
 import com.hritik.jobms.job.Job;
 import com.hritik.jobms.job.JobRepository;
 import com.hritik.jobms.job.JobService;
+import com.hritik.jobms.job.dto.JobWithCompanyDTO;
+
 
 @Service 
 public class JobServiceImplementation implements JobService {
@@ -22,8 +28,28 @@ public class JobServiceImplementation implements JobService {
     }
 
     @Override
-    public List<Job> findAll(){
-        return jobRepository.findAll();
+    public List<JobWithCompanyDTO> findAll(){
+
+        List<Job> jobs = jobRepository.findAll();
+        List<JobWithCompanyDTO> jobWithCompanyDTOs = new ArrayList<>();
+
+        RestTemplate restTemplate = new RestTemplate();
+
+        for(Job job: jobs){
+            Company company = restTemplate.getForObject(
+                "http://localhost:8081/companies/" + job.getCompanyId(), 
+                Company.class
+            );
+            
+            JobWithCompanyDTO jobWithCompanyDTO = new JobWithCompanyDTO();
+            jobWithCompanyDTO.setJob(job);
+            jobWithCompanyDTO.setCompany(company);
+
+            jobWithCompanyDTOs.add(jobWithCompanyDTO);
+
+        }
+
+        return jobWithCompanyDTOs;
     }
 
     @Override

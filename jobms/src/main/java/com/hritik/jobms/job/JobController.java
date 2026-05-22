@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import org.springframework.web.bind.annotation.RestController;
 
+import com.hritik.jobms.job.dto.JobWithCompanyDTO;
+
 import org.springframework.web.bind.annotation.PutMapping;
 
 
@@ -27,8 +29,8 @@ public class JobController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Job>> findAll(){
-        List<Job> jobs = jobService.findAll();
+    public ResponseEntity<List<JobWithCompanyDTO>> findAll(){
+        List<JobWithCompanyDTO> jobs = jobService.findAll();
         return new ResponseEntity<>(jobs, HttpStatus.OK);
     }
 

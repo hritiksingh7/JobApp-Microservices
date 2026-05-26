@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -21,6 +22,9 @@ public class JobServiceImplementation implements JobService {
 
     // private List<Job> jobs = new ArrayList<>();
     JobRepository jobRepository;
+
+    @Autowired
+    RestTemplate restTemplate;
     
 
     public JobServiceImplementation(JobRepository jobRepository) {
@@ -33,11 +37,10 @@ public class JobServiceImplementation implements JobService {
         List<Job> jobs = jobRepository.findAll();
         List<JobWithCompanyDTO> jobWithCompanyDTOs = new ArrayList<>();
 
-        RestTemplate restTemplate = new RestTemplate();
 
         for(Job job: jobs){
             Company company = restTemplate.getForObject(
-                "http://localhost:8081/companies/" + job.getCompanyId(), 
+                "http://COMPANY-SERVICE/companies/" + job.getCompanyId(), 
                 Company.class
             );
             

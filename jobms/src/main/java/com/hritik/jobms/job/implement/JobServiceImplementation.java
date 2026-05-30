@@ -7,14 +7,19 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import com.hritik.jobms.job.external.Company;
+import com.hritik.jobms.job.external.Review;
+import com.hritik.jobms.job.mapper.JobMapper;
 import com.hritik.jobms.job.Job;
 import com.hritik.jobms.job.JobRepository;
 import com.hritik.jobms.job.JobService;
-import com.hritik.jobms.job.dto.JobWithCompanyDTO;
+import com.hritik.jobms.job.dto.JobDTO;
 
 
 @Service 
@@ -32,27 +37,18 @@ public class JobServiceImplementation implements JobService {
     }
 
     @Override
-    public List<JobWithCompanyDTO> findAll(){
+    public List<JobDTO> findAll(){
 
         List<Job> jobs = jobRepository.findAll();
-        List<JobWithCompanyDTO> jobWithCompanyDTOs = new ArrayList<>();
+        List<JobDTO> jobDTOs = new ArrayList<>();
 
 
         for(Job job: jobs){
-            Company company = restTemplate.getForObject(
-                "http://COMPANY-SERVICE/companies/" + job.getCompanyId(), 
-                Company.class
-            );
-            
-            JobWithCompanyDTO jobWithCompanyDTO = new JobWithCompanyDTO();
-            jobWithCompanyDTO.setJob(job);
-            jobWithCompanyDTO.setCompany(company);
-
-            jobWithCompanyDTOs.add(jobWithCompanyDTO);
-
+            JobDTO jobDTO = convertToJobDTO(job);
+            jobDTOs.add(jobDTO);
         }
 
-        return jobWithCompanyDTOs;
+        return jobDTOs;
     }
 
     @Override
@@ -61,8 +57,14 @@ public class JobServiceImplementation implements JobService {
     }
 
     @Override
-    public Job findById(Long Id){
-        return jobRepository.findById(Id).orElse(null);
+    public JobDTO findById(Long Id){
+        Job job = jobRepository.findById(Id).orElse(null);
+
+        if(job != null){
+            return convertToJobDTO(job);
+        }
+
+        return null;
     }
 
     @Override
@@ -96,6 +98,28 @@ public class JobServiceImplementation implements JobService {
             return true;
         }
         return false;
+    }
+
+    // helper methods
+    public JobDTO convertToJobDTO(Job job){
+
+        Company company = restTemplate.getForObject(
+            "http://COMPANY-SERVICE/companies/" + job.getCompanyId(),
+            Company.class
+        );
+
+        ResponseEntity<List<Review>> reviewResponse = restTemplate.exchange(
+            "http://REVIEW-SERVICE/reviews?companyId=" + job.getCompanyId(), 
+            HttpMethod.GET,
+            null,
+            new ParameterizedTypeReference<List<Review>>() {
+            }
+        );
+
+        List<Review> reviews = reviewResponse.getBody();
+
+        JobDTO jobDTO = JobMapper.mapToJobDTO(job, company, reviews);
+        return jobDTO;
     }
     
     // commenting out this because it was done using manual handling, now we are switching to using JPA repostiroy for all the tasks

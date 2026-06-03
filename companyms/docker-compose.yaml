@@ -1,4 +1,5 @@
 services:
+
   postgres:
     container_name: postgres_container
     image: postgres
@@ -30,9 +31,20 @@ services:
       - postgres
     restart: unless-stopped
 
+
+  zipkin:
+    container_name: zipkin
+    image: openzipkin/zipkin
+    ports:
+      - "9411:9411"
+    networks:
+      - postgres
+
+
 networks:
     postgres:
       driver: bridge
+
 
 volumes:
     postgres:

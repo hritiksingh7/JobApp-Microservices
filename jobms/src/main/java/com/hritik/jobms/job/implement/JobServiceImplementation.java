@@ -19,6 +19,8 @@ import com.hritik.jobms.job.mapper.JobMapper;
 import com.hritik.jobms.job.Job;
 import com.hritik.jobms.job.JobRepository;
 import com.hritik.jobms.job.JobService;
+import com.hritik.jobms.job.clients.CompanyClient;
+import com.hritik.jobms.job.clients.ReviewClient;
 import com.hritik.jobms.job.dto.JobDTO;
 
 
@@ -28,12 +30,20 @@ public class JobServiceImplementation implements JobService {
     // private List<Job> jobs = new ArrayList<>();
     JobRepository jobRepository;
 
+    CompanyClient companyClient;
+    ReviewClient reviewClient;
+
     @Autowired
     RestTemplate restTemplate;
     
 
-    public JobServiceImplementation(JobRepository jobRepository) {
+    public JobServiceImplementation(JobRepository jobRepository,
+                                    CompanyClient companyClient,
+                                    ReviewClient reviewClient
+    ) {
         this.jobRepository = jobRepository;
+        this.companyClient = companyClient;
+        this.reviewClient = reviewClient;
     }
 
     @Override
@@ -103,23 +113,29 @@ public class JobServiceImplementation implements JobService {
     // helper methods
     public JobDTO convertToJobDTO(Job job){
 
-        Company company = restTemplate.getForObject(
-            "http://COMPANY-SERVICE/companies/" + job.getCompanyId(),
-            Company.class
-        );
-
-        ResponseEntity<List<Review>> reviewResponse = restTemplate.exchange(
-            "http://REVIEW-SERVICE/reviews?companyId=" + job.getCompanyId(), 
-            HttpMethod.GET,
-            null,
-            new ParameterizedTypeReference<List<Review>>() {
-            }
-        );
-
-        List<Review> reviews = reviewResponse.getBody();
+        Company company = companyClient.getCompany(job.getCompanyId());
+        List<Review> reviews = reviewClient.getReviews(job.getCompanyId());
 
         JobDTO jobDTO = JobMapper.mapToJobDTO(job, company, reviews);
         return jobDTO;
+
+        // Company company = restTemplate.getForObject(
+        //     "http://COMPANY-SERVICE/companies/" + job.getCompanyId(),
+        //     Company.class
+        // );
+
+        // ResponseEntity<List<Review>> reviewResponse = restTemplate.exchange(
+        //     "http://REVIEW-SERVICE/reviews?companyId=" + job.getCompanyId(), 
+        //     HttpMethod.GET,
+        //     null,
+        //     new ParameterizedTypeReference<List<Review>>() {
+        //     }
+        // );
+
+        // List<Review> reviews = reviewResponse.getBody();
+
+        // JobDTO jobDTO = JobMapper.mapToJobDTO(job, company, reviews);
+        // return jobDTO;
     }
     
     // commenting out this because it was done using manual handling, now we are switching to using JPA repostiroy for all the tasks
